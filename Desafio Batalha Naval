@@ -1,0 +1,152 @@
+# Desafio-Batalha-Naval
+ jogo de Batalha Naval em C, com posicionamento aleatório de navios, tiros do jogador e verificação de acertos
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <stdbool.h>
+
+#define TAMANHO 10
+#define AGUA '~'
+#define NAVIO 'N'
+#define ACERTO 'X'
+#define ERRO 'O'
+
+char tabuleiro[TAMANHO][TAMANHO];
+char tabuleiroOculto[TAMANHO][TAMANHO]; // Onde os navios realmente estão
+
+// Inicializa os tabuleiros
+void inicializarTabuleiros() {
+    for (int i = 0; i < TAMANHO; i++) {
+        for (int j = 0; j < TAMANHO; j++) {
+            tabuleiro[i][j] = AGUA;
+            tabuleiroOculto[i][j] = AGUA;
+        }
+    }
+}
+
+// Exibe o tabuleiro visível ao jogador
+void exibirTabuleiro() {
+    printf("  0 1 2 3 4 5 6 7 8 9\n");
+    for (int i = 0; i < TAMANHO; i++) {
+        printf("%d ", i);
+        for (int j = 0; j < TAMANHO; j++) {
+            printf("%c ", tabuleiro[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+// Posiciona um navio de determinado tamanho aleatoriamente
+bool posicionarNavio(int tamanho) {
+    int x, y;
+    bool horizontal;
+    int tentativas = 0;
+    
+    while (tentativas < 100) { // Limite de tentativas para evitar loop infinito
+        tentativas++;
+        horizontal = rand() % 2 == 0;
+        x = rand() % TAMANHO;
+        y = rand() % TAMANHO;
+        
+        bool valido = true;
+        
+        // Verifica se cabe no tabuleiro
+        if (horizontal) {
+            if (y + tamanho > TAMANHO) continue;
+            for (int i = y; i < y + tamanho; i++) {
+                if (tabuleiroOculto[x][i] != AGUA) {
+                    valido = false;
+                    break;
+                }
+            }
+        } else {
+            if (x + tamanho > TAMANHO) continue;
+            for (int i = x; i < x + tamanho; i++) {
+                if (tabuleiroOculto[i][y] != AGUA) {
+                    valido = false;
+                    break;
+                }
+            }
+        }
+        
+        if (valido) {
+            // Posiciona o navio
+            if (horizontal) {
+                for (int i = y; i < y + tamanho; i++) {
+                    tabuleiroOculto[x][i] = NAVIO;
+                }
+            } else {
+                for (int i = x; i < x + tamanho; i++) {
+                    tabuleiroOculto[i][y] = NAVIO;
+                }
+            }
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+// Verifica se ainda há navios no tabuleiro
+bool naviosRestantes() {
+    for (int i = 0; i < TAMANHO; i++) {
+        for (int j = 0; j < TAMANHO; j++) {
+            if (tabuleiroOculto[i][j] == NAVIO) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+int main() {
+    srand(time(NULL));
+    inicializarTabuleiros();
+    
+    // Posiciona os navios (1 de tamanho 5, 1 de 4, 2 de 3 e 1 de 2)
+    posicionarNavio(5);
+    posicionarNavio(4);
+    posicionarNavio(3);
+    posicionarNavio(3);
+    posicionarNavio(2);
+    
+    printf("Batalha Naval!\n");
+    printf("Tente afundar todos os navios!\n");
+    
+    int tentativas = 0;
+    while (naviosRestantes()) {
+        exibirTabuleiro();
+        
+        int x, y;
+        printf("Digite as coordenadas (linha e coluna, 0-9): ");
+        scanf("%d %d", &x, &y);
+        
+        if (x < 0 || x >= TAMANHO || y < 0 || y >= TAMANHO) {
+            printf("Coordenadas inválidas! Tente novamente.\n");
+            continue;
+        }
+        
+        if (tabuleiro[x][y] != AGUA) {
+            printf("Você já atirou aqui! Tente novamente.\n");
+            continue;
+        }
+        
+        tentativas++;
+        
+        if (tabuleiroOculto[x][y] == NAVIO) {
+            printf("Acertou um navio!\n");
+            tabuleiro[x][y] = ACERTO;
+            tabuleiroOculto[x][y] = ACERTO;
+        } else {
+            printf("Água!\n");
+            tabuleiro[x][y] = ERRO;
+        }
+    }
+    
+    printf("\nParabéns! Você afundou todos os navios em %d tentativas!\n", tentativas);
+    printf("Tabuleiro final:\n");
+    exibirTabuleiro();
+    
+    return 0;
+}
